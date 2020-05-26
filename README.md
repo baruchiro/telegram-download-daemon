@@ -38,7 +38,7 @@ You can define the as Environment Variables, or put them as a commend line argum
 
 # Docker
 
-`docker pull alfem/telegram-download-daemon`
+`docker pull baruchiro/telegram-download-daemon`
 
 When we use the [`TelegramClient`](https://docs.telethon.dev/en/latest/quick-references/client-reference.html#telegramclient) method, it requires us to interact with the `Console` to give it our phone number and confirm with a security code.
 
