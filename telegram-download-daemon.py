@@ -3,12 +3,13 @@
 # Author: Alfonso E.M. <alfonso@el-magnifico.org>
 # You need to install telethon (and cryptg to speed up downloads)
 
-from os import getenv
+from os import getenv, rename
+import subprocess
 
 from sessionManager import getSession, saveSession
 
 from telethon import TelegramClient, events
-from telethon.tl.types import PeerChannel, DocumentAttributeFilename
+from telethon.tl.types import PeerChannel, DocumentAttributeFilename, DocumentAttributeVideo
 import logging
 
 logging.basicConfig(format='[%(levelname) 5s/%(asctime)s]%(name)s:%(message)s',
@@ -80,7 +81,9 @@ async def log_reply(event : events.ChatAction.Event, reply):
     await event.reply(reply)
 
 def getFilename(event: events.NewMessage.Event):
-    return next(x for x in event.media.document.attributes if isinstance(x, DocumentAttributeFilename)).file_name
+    for attribute in event.media.document.attributes:
+        if isinstance(attribute, DocumentAttributeFilename): return attribute.file_name
+        if isinstance(attribute, DocumentAttributeVideo): return "DocumentAttributeVideo"
 
 
 with TelegramClient(getSession(), api_id, api_hash,
@@ -99,6 +102,14 @@ with TelegramClient(getSession(), api_id, api_hash,
 
         print(event)
 
+        if not event.media and event.message:
+            command = event.message.message
+            command = command.lower()
+            if command == "list":
+                output = subprocess.run(["ls", "-l", downloadFolder], capture_output=True).stdout
+                output = output.decode('utf-8')
+                await log_reply(event, output)
+
         if event.media:
             filename=getFilename(event)
             await log_reply(event, f"{filename} added to queue")
@@ -115,15 +126,17 @@ with TelegramClient(getSession(), api_id, api_hash,
                 f"Downloading file {filename} ({event.media.document.size} bytes)"
             )
 
-            await client.download_media(event.message, downloadFolder)
+            await client.download_media(event.message, f"{downloadFolder}/{filename}.partial")
+            rename(f"{downloadFolder}/{filename}.partial", f"{downloadFolder}/{filename}")
             await log_reply(event, f"{filename} ready")
 
             queue.task_done()
 
     async def start():
         tasks = []
+        loop = asyncio.get_event_loop()
         for i in range(worker_count):
-            task = asyncio.create_task(worker())
+            task = loop.create_task(worker())
             tasks.append(task)
         await sendHelloMessage(client, peerChannel)
         await client.run_until_disconnected()

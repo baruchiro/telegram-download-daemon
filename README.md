@@ -29,12 +29,12 @@ You need to configure these values:
 |--------------------------|:-----------------------:|--------------------------------------------------------------|---------------------|
 | `TELEGRAM_DAEMON_API_ID`   | `--api-id`              | api_id from https://core.telegram.org/api/obtaining_api_id   |                     |
 | `TELEGRAM_DAEMON_API_HASH` | `--api-hash`            | api_hash from https://core.telegram.org/api/obtaining_api_id |                     |
-| `TELEGRAM_DAEMON_CHANNEL`  | `--dest`                | Destenation path for downloading files                       | `/telegram-downloads` |
-| `TELEGRAM_DAEMON_DEST`     | `--channel`             | Channel id to download from it                               |                     |
+| `TELEGRAM_DAEMON_DEST`     | `--dest`                | Destenation path for downloading files                       | `/telegram-downloads` |
+| `TELEGRAM_DAEMON_CHANNEL`  | `--channel`             | Channel id to download from it                               |                     |
 
-You can define the as Environment Variables, or put them as a commend line arguments, for example:
+You can define them as Environment Variables, or put them as a command line arguments, for example:
 
-    python telegram-download-daemon.py --api-ip <your-id> --api-hash <your-hash> --channel <channel-number>
+    python telegram-download-daemon.py --api-id <your-id> --api-hash <your-hash> --channel <channel-number>
 
 # Docker
 
