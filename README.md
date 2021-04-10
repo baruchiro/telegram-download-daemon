@@ -2,6 +2,8 @@
 
 A Telegram Daemon (not a bot) for file downloading automation 
 
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/baruchiro)
+
 If you have got an Internet connected computer or NAS and you want to automate file downloading from Telegram channels, this
 daemon is for you. 
 

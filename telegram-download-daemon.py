@@ -3,9 +3,11 @@
 # Author: Alfonso E.M. <alfonso@el-magnifico.org>
 # You need to install telethon (and cryptg to speed up downloads)
 
-from os import getenv, rename
+from os import getenv
+from shutil import move
 import subprocess
 import math
+import time
 
 from sessionManager import getSession, saveSession
 
@@ -21,7 +23,7 @@ import argparse
 import asyncio
 
 
-TDD_VERSION="1.3"
+TDD_VERSION="1.4"
 
 TELEGRAM_DAEMON_API_ID = getenv("TELEGRAM_DAEMON_API_ID")
 TELEGRAM_DAEMON_API_HASH = getenv("TELEGRAM_DAEMON_API_HASH")
@@ -80,6 +82,9 @@ channel_id = args.channel
 downloadFolder = args.dest
 tempFolder = args.temp
 worker_count = multiprocessing.cpu_count()
+updateFrequency = 10
+lastUpdate = 0
+#multiprocessing.Value('f', 0)
 
 if not tempFolder:
     tempFolder = downloadFolder
@@ -111,6 +116,9 @@ def getFilename(event: events.NewMessage.Event):
 in_progress={}
 
 async def set_progress(filename, message, received, total):
+    global lastUpdate
+    global updateFrequency
+
     if received >= total:
         try: in_progress.pop(filename)
         except: pass
@@ -120,8 +128,10 @@ async def set_progress(filename, message, received, total):
     progress_message= "{0} % ({1} / {2})".format(percentage, received, total)
     in_progress[filename] = progress_message
 
-    if (int(percentage) % 5) == 0:
+    currentTime=time.time()
+    if (currentTime - lastUpdate) > updateFrequency:
         await log_reply(message, progress_message)
+        lastUpdate=currentTime
 
 
 with TelegramClient(getSession(), api_id, api_hash,
@@ -191,7 +201,7 @@ with TelegramClient(getSession(), api_id, api_hash,
 
                 await client.download_media(event.message, "{0}/{1}.{2}".format(tempFolder,filename,TELEGRAM_DAEMON_TEMP_SUFFIX), progress_callback = download_callback)
                 set_progress(filename, message, 100, 100)
-                rename("{0}/{1}.{2}".format(tempFolder,filename,TELEGRAM_DAEMON_TEMP_SUFFIX), "{0}/{1}".format(downloadFolder,filename))
+                move("{0}/{1}.{2}".format(tempFolder,filename,TELEGRAM_DAEMON_TEMP_SUFFIX), "{0}/{1}".format(downloadFolder,filename))
                 await log_reply(message, "{0} ready".format(filename))
 
                 queue.task_done()
@@ -199,6 +209,7 @@ with TelegramClient(getSession(), api_id, api_hash,
                 print('Queue worker error: ', e)
  
     async def start():
+
         tasks = []
         loop = asyncio.get_event_loop()
         for i in range(worker_count):
