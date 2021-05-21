@@ -12,13 +12,15 @@ or daemon to allow bigger downloads (limited to 2GB by Telegram APIs).
 
 # Installation
 
-You need Python3 (tested in 3.6).
+You need Python3 (3.6 works fine, 3.5 will crash randomly).
 
 Install dependencies by running this command:
 
     pip install -r requirements.txt
 
 (If you don't want to install `cryptg` and its dependencies, you just need to install `telethon`)
+
+Warning: If you get a `File size too large message`, check the version of Telethon library you are using. Old versions have got a 1.5Gb file size limit.
 
 
 Obtain your own api id: https://core.telegram.org/api/obtaining_api_id
