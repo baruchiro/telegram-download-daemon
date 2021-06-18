@@ -10,6 +10,7 @@ import math
 import time
 import random
 import string
+import os.path
 
 from sessionManager import getSession, saveSession
 
@@ -25,7 +26,7 @@ import argparse
 import asyncio
 
 
-TDD_VERSION="1.5"
+TDD_VERSION="1.8"
 
 TELEGRAM_DAEMON_API_ID = getenv("TELEGRAM_DAEMON_API_ID")
 TELEGRAM_DAEMON_API_HASH = getenv("TELEGRAM_DAEMON_API_HASH")
@@ -120,7 +121,8 @@ def getFilename(event: events.NewMessage.Event):
         if isinstance(attribute, DocumentAttributeVideo): mediaFileName = event.original_update.message.message
 
     if path.exists("{0}/{1}.{2}".format(tempFolder,mediaFileName,TELEGRAM_DAEMON_TEMP_SUFFIX)) or path.exists("{0}/{1}".format(downloadFolder,mediaFileName)):
-       mediaFileName=mediaFileName+"."+getRandomId(8)
+       fileName, fileExtension = os.path.splitext(mediaFileName)
+       mediaFileName=fileName+"-"+getRandomId(8)+fileExtension
        
     return mediaFileName
 
@@ -135,7 +137,7 @@ async def set_progress(filename, message, received, total):
         try: in_progress.pop(filename)
         except: pass
         return
-    percentage = math.trunc(received / total * 10000) / 100;
+    percentage = math.trunc(received / total * 10000) / 100
 
     progress_message= "{0} % ({1} / {2})".format(percentage, received, total)
     in_progress[filename] = progress_message
@@ -189,9 +191,13 @@ with TelegramClient(getSession(), api_id, api_hash,
                 await log_reply(event, output)
 
             if event.media:
-                filename=getFilename(event)
-                message=await event.reply("{0} added to queue".format(filename))
-                await queue.put([event, message])
+                if hasattr(event.media, 'document'):
+                    filename=getFilename(event)
+                    message=await event.reply("{0} added to queue".format(filename))
+                    await queue.put([event, message])
+                else:
+                    message=await event.reply("That is not downloadable. Try to send it as a file.")
+
         except Exception as e:
                 print('Events handler error: ', e)
 
@@ -218,6 +224,8 @@ with TelegramClient(getSession(), api_id, api_hash,
 
                 queue.task_done()
             except Exception as e:
+                try: await log_reply(message, "Error: {}".format(str(e))) # If it failed, inform the user about it.
+                except: pass
                 print('Queue worker error: ', e)
  
     async def start():
